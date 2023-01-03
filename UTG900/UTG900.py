@@ -9,7 +9,9 @@ import pyvisa
 import re
 from time import sleep
 
-ADDR= "USB0::0x6656::0x0834::1485061822::INSTR"
+#ADDR= "USB0::0x6656::0x0834::1485061822::INSTR"
+ADDR='USB0::26198::2100::3223736947::0::INSTR'
+
 flags.DEFINE_integer('debug', -1, '-3=fatal, -1=warning, 0=info, 1=debug')
 flags.DEFINE_string('addr', ADDR, "UTG900 pyvisa resource address")
 flags.DEFINE_string('captureDir', "pics", "Capture directory")
@@ -142,6 +144,7 @@ class UTG962:
              try:
                 self.llF(keyMap[val])
              except KeyError as err:
+                print (str(self.llF))
                 logging.error( "Invalid key: '{}', valid keys: {}".format( val, keyMap.keys()))
                 logging.error( str(err) )
                 raise
@@ -243,6 +246,29 @@ class UTG962:
              }
              self.llFKey( val=wave, keyMap = waveMap )
 
+         def ilUtilMainProps(self, val):
+             """Main utility menu"""
+             keyMap  = {
+                "CH1 Setting": "1",
+                "CH2 Setting": "2",
+                "Counter": "3",
+                "System":  "4",
+             }
+             self.llFKey( val=val, keyMap = keyMap )
+
+
+         def ilUtilProps( self, val ):
+             """Utility properties"""
+             waveMap  = {
+                "Output": "1",
+                "Inversion": "2",
+                "Load":  "3",
+                "Amp Limit": "4",
+                "Upper": "5",
+                "Lower": "6",
+             }
+             self.llFKey( val=val, keyMap = waveMap )
+
          # Units
          def ilChooseChannel( self, ch ):
              """Key sequence to to bring UTG962 to display to a known state. 
@@ -314,6 +340,13 @@ class UTG962:
                 "%": "1",
              }
              self.llFKey( val=unit, keyMap = dutyUnit )
+
+         def ilImpedanceUnit( self, unit ):
+             impedanceUnit  = {
+                "Ω": "1",
+                "HighZ": "4",
+             }
+             self.llFKey( val=unit, keyMap = impedanceUnit )
 
           # Utils
          def dibToImage( self, dibFilePath, resultPath ):
@@ -419,6 +452,20 @@ class UTG962:
              # Activate
              self.on(ch)
 
+         def setLoadImpedance(self, ch=1, impedance = 50.0):
+             #self.off(ch)
+             ch = int(ch)
+             self.llWave()
+             self.llUtility()
+             self.ilUtilityCh( ch )
+             self.ilUtilProps("Load")
+             if impedance == "HighZ":
+                 self.ilImpedanceUnit("HighZ")
+             else:
+                 self.llNum(str(impedance))
+                 self.ilImpedanceUnit("Ω")
+             #self.on(ch)
+
          def arbGenerate( self, ch=1, wave="arb", filePath="tmp/apu.csv", freq=None, amp=None,  offset=None, phase=None, fileName="ARB" ):
              """Arb generation
              
@@ -496,6 +543,9 @@ pulseProps = squareProps | {
     'fall'  :     "Fall [ns,us,ms,s,ks]",
 }
 
+setLoadImpedanceProps = onOffProps | { 
+    'impedance' : "Load [ohms]"}
+
 subMenu = {
     "sine"            : sineProps,
     "square"          : squareProps,
@@ -506,6 +556,7 @@ subMenu = {
     "screen"          :  screenCaptureProps,
     "reset"           :  {},
     "list_resources"  :  {},
+    "setLoadImpedance": setLoadImpedanceProps,
     "version"         :  {},
 }
 
@@ -523,6 +574,7 @@ mainMenu = {
     "reset"          : "Send reset to UTG900 signal generator",
     "screen"         : "Take screenshot to 'captureDir'",
     "list_resources" : "List pyvisa resources (=pyvisa list_resources() wrapper)'",
+    "setLoadImpedance" : "set load impedance",
     "version"        : "Output version number",
 }
 
@@ -700,6 +752,12 @@ def main(_argv):
             }
             logging.info( "square: propVals:{}".format(propVals))
             sgen().generate( wave="square", **propVals )
+        elif cmd == 'setLoadImpedance':
+            propVals = {
+                k: promptValue(v,key=k,cmds=cmds) for k,v in setLoadImpedanceProps.items()
+            }
+            logging.info( "square: propVals:{}".format(propVals))
+            sgen().setLoadImpedance(**propVals)
         elif cmd == 'reset':
             sgen().reset()
         elif cmd == 'list_resources':
