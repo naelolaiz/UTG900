@@ -55,7 +55,9 @@ class UTG962:
          def close(self ):
              try:
                  logging.info(  "Closing sgen {}".format(self.sgen))
+                 self.llOpen()
                  self.sgen.close()
+                 self.sgen = None
              except:
                  logging.warning(  "Closing sgen {} - failed".format(self.sgen))                 
                  pass
@@ -467,14 +469,14 @@ class UTG962:
              # Activate
              self.on(ch)
 
-         def setLoadImpedance(self, ch=1, impedance = 50.0):
+         def setLoadImpedance(self, ch=1, loadImpedance = 50.0):
              #self.off(ch)
              ch = int(ch)
              self.llWave()
              self.llUtility()
              self.ilUtilityCh( ch )
              self.ilUtilProps("Load")
-             self.ilSetLoadImpedance(impedance)
+             self.ilSetLoadImpedance(loadImpedance)
 
          def arbGenerate( self, ch=1, wave="arb", filePath="tmp/apu.csv", freq=None, amp=None,  offset=None, phase=None, fileName="ARB" ):
              """Arb generation
@@ -554,7 +556,7 @@ pulseProps = squareProps | {
 }
 
 setLoadImpedanceProps = onOffProps | { 
-    'impedance' : "Load [ohm, HighZ]"}
+    'loadImpedance' : "Load [ohm, HighZ]"}
 
 subMenu = {
     "sine"               : sineProps,
@@ -783,9 +785,8 @@ def main(_argv):
                 k: promptValue(v,key=k,cmds=cmds) for k,v in screenCaptureProps.items()
             }
             sgen().screenShot(captureDir=FLAGS.captureDir, **propVals )
-    
-    # sgen = 
 
+    
     # Close if not opened
     if gSgen is not None:
         logging.info( "Closing gSgen" )
