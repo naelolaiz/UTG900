@@ -587,6 +587,14 @@ line use, pass commands and options documented above, in [[#commands-and-paramet
 parameters]] -section
 
 
+# In linux it may be needed to add a file /etc/udev/rules.d/50-utg962.rules:
+"""
+SUBSYSTEM=="usb", ATTRS{idVendor}=="6656", ATTRS{idProduct}=="0834", MODE="0666"
+"""
+Dependencies:
+* pyusb
+* pyvisa-py
+* absl-py
 
 * Releases
 
