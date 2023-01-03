@@ -168,6 +168,19 @@ class UTG962:
          def ilRaiseFall( self, raiseFall, unit ):
              self.llNum( str(raiseFall))
              self.ilRaiseFallUnit(unit)
+         def ilSetLoadImpedance(self, loadImpedance):
+             loadImpedance = str(loadImpedance)
+             if loadImpedance == "HighZ":
+                 self.ilImpedanceUnit("HighZ")
+             elif loadImpedance == "50" or loadImpedance == "50ohm":
+                 self.ilImpedanceUnit("50ohm")
+             elif loadImpedance == "75" or loadImpedance == "75ohm":
+                 self.ilImpedanceUnit("75ohm")
+             else:
+                 self.llNum(loadImpedance)
+                 if loadImpedance[-1] != "ohm":
+                     self.ilImpedanceUnit("ohm")
+
          def ilScreenShot( self, filePath="tmp/apu.jpg"):
              fileDir = os.path.dirname(filePath )
              filePathDib = os.path.join(fileDir, "__UTG-capture__.bmp" )
@@ -343,7 +356,9 @@ class UTG962:
 
          def ilImpedanceUnit( self, unit ):
              impedanceUnit  = {
-                "Ω": "1",
+                "ohm": "1",
+                "50ohm": "2",
+                "75ohm": "3",
                 "HighZ": "4",
              }
              self.llFKey( val=unit, keyMap = impedanceUnit )
@@ -459,12 +474,7 @@ class UTG962:
              self.llUtility()
              self.ilUtilityCh( ch )
              self.ilUtilProps("Load")
-             if impedance == "HighZ":
-                 self.ilImpedanceUnit("HighZ")
-             else:
-                 self.llNum(str(impedance))
-                 self.ilImpedanceUnit("Ω")
-             #self.on(ch)
+             self.ilSetLoadImpedance(impedance)
 
          def arbGenerate( self, ch=1, wave="arb", filePath="tmp/apu.csv", freq=None, amp=None,  offset=None, phase=None, fileName="ARB" ):
              """Arb generation
@@ -544,38 +554,38 @@ pulseProps = squareProps | {
 }
 
 setLoadImpedanceProps = onOffProps | { 
-    'impedance' : "Load [ohms]"}
+    'impedance' : "Load [ohm, HighZ]"}
 
 subMenu = {
-    "sine"            : sineProps,
-    "square"          : squareProps,
-    "pulse"           : pulseProps,
-    "arb"             : arbProps,    
-    "on"              : onOffProps,
-    "off"             : onOffProps,
-    "screen"          :  screenCaptureProps,
-    "reset"           :  {},
-    "list_resources"  :  {},
-    "setLoadImpedance": setLoadImpedanceProps,
-    "version"         :  {},
+    "sine"               : sineProps,
+    "square"             : squareProps,
+    "pulse"              : pulseProps,
+    "arb"                : arbProps,    
+    "on"                 : onOffProps,
+    "off"                : onOffProps,
+    "screen"             :  screenCaptureProps,
+    "reset"              :  {},
+    "list_resources"     :  {},
+    "set_load_impedance" : setLoadImpedanceProps,
+    "version"            :  {},
 }
 
 
 mainMenu = {
-    'q'              : "Exit",
-    'Q'              : "Exit",
-    '?'              : "Usage help",
-    "sine"           : "Generate sine -wave on channel 1|2",
-    "square"         : "Generate square -wave on channel 1|2",
-    "pulse"          : "Generate pulse -wave on channel 1|2",
-    "arb"            : "Upload wave file and use it to generate wave on channel 1|2",
-    "on"             : "Switch on channel 1|2",
-    "off"            : "Switch off channel 1|2",
-    "reset"          : "Send reset to UTG900 signal generator",
-    "screen"         : "Take screenshot to 'captureDir'",
-    "list_resources" : "List pyvisa resources (=pyvisa list_resources() wrapper)'",
-    "setLoadImpedance" : "set load impedance",
-    "version"        : "Output version number",
+    'q'                  : "Exit",
+    'Q'                  : "Exit",
+    '?'                  : "Usage help",
+    "sine"               : "Generate sine -wave on channel 1|2",
+    "square"             : "Generate square -wave on channel 1|2",
+    "pulse"              : "Generate pulse -wave on channel 1|2",
+    "arb"                : "Upload wave file and use it to generate wave on channel 1|2",
+    "on"                 : "Switch on channel 1|2",
+    "off"                : "Switch off channel 1|2",
+    "reset"              : "Send reset to UTG900 signal generator",
+    "screen"             : "Take screenshot to 'captureDir'",
+    "list_resources"     : "List pyvisa resources (=pyvisa list_resources() wrapper)'",
+    "set_load_impedance" : "Set load impedance",
+    "version"            : "Output version number",
 }
 
 
@@ -752,7 +762,7 @@ def main(_argv):
             }
             logging.info( "square: propVals:{}".format(propVals))
             sgen().generate( wave="square", **propVals )
-        elif cmd == 'setLoadImpedance':
+        elif cmd == 'set_load_impedance':
             propVals = {
                 k: promptValue(v,key=k,cmds=cmds) for k,v in setLoadImpedanceProps.items()
             }
